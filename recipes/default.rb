@@ -19,7 +19,63 @@
 # limitations under the License.
 #
 
+if node['rabbitmq']['status_broken'] && !node['rabbitmq']['pid_file']
+  Chef::Application.fatal!("You have set node[:rabbitmq][:status_broken]. " +
+    "You must also set node[:rabbitmq][:pid_file].")
+end
+
 include_recipe "erlang"
+
+## You'll see setsid used in the start command in this cookbook. This
+## is because there is a problem with the stock init script in the RabbitMQ
+## debian package (at least in 2.8.2) that makes it not daemonize properly
+## when called from chef. The setsid command forces the subprocess into a state
+## where it can daemonize properly. -Kevin (thanks to Daniel DeLeo for the help)
+
+service "rabbitmq-server" do
+  if node['rabbitmq']['pid_file']
+    wait_code = "timeout 60 rabbitmqctl wait #{node['rabbitmq']['pid_file']}"
+  else
+    wait_code = "sleep 1"
+  end
+
+  start_command "setsid /etc/init.d/rabbitmq-server start; #{wait_code}"
+
+  if node['rabbitmq']['status_broken']
+    stop_command "rabbitmqctl stop"
+    restart_command %Q{
+      rabbitmqctl stop
+      setsid /etc/init.d/rabbitmq-server start
+      #{wait_code}
+    }
+    status_command %Q{
+      pid_file='#{node['rabbitmq']['pid_file']}'
+      if test -f "$pid_file"; then
+        pid=`cat "$pid_file"`
+        if test "$pid" != "" && kill -0 $pid; then
+          echo RabbitMQ running on PID $pid
+          true
+        else
+          echo RabbitMQ not running
+          false
+        fi
+      else
+        echo RabbitMQ not running
+        false
+      fi
+    }
+  else
+    stop_command "/etc/init.d/rabbitmq-server stop"
+    restart_command %Q{
+      setsid /etc/init.d/rabbitmq-server restart
+      #{wait_code}
+    }
+    status_command "/etc/init.d/rabbitmq-server status"
+    supports :status => true, :restart => true
+  end
+
+  supports :status => true, :restart => true
+end
 
 case node['platform_family']
 when "debian"
@@ -100,8 +156,7 @@ end
 
 if node['rabbitmq']['cluster'] and node['rabbitmq']['erlang_cookie'] != existing_erlang_key
 
-  service "stop rabbitmq-server" do
-    service_name "rabbitmq-server"
+  service "rabbitmq-server" do
     action :stop
   end
 
@@ -115,17 +170,6 @@ if node['rabbitmq']['cluster'] and node['rabbitmq']['erlang_cookie'] != existing
 
 end
 
-## You'll see setsid used in all the init statements in this cookbook. This
-## is because there is a problem with the stock init script in the RabbitMQ
-## debian package (at least in 2.8.2) that makes it not daemonize properly
-## when called from chef. The setsid command forces the subprocess into a state
-## where it can daemonize properly. -Kevin (thanks to Daniel DeLeo for the help)
-
 service "rabbitmq-server" do
-  start_command "setsid /etc/init.d/rabbitmq-server start"
-  stop_command "setsid /etc/init.d/rabbitmq-server stop"
-  restart_command "setsid /etc/init.d/rabbitmq-server restart"
-  status_command "setsid /etc/init.d/rabbitmq-server status"
-  supports :status => true, :restart => true
   action [ :enable, :start ]
 end

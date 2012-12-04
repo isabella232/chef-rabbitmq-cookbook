@@ -5,6 +5,14 @@ default['rabbitmq']['port']  = nil
 default['rabbitmq']['config'] = nil
 default['rabbitmq']['logdir'] = nil
 default['rabbitmq']['mnesiadir'] = nil
+case node['platform_family']
+when 'debian'
+  # The rabbitmq.com init script for RabbitMQ 3.0.0 is broken.
+  # We work around it by forcing control using PID file.
+  # https://groups.google.com/d/msg/rabbitmq-discuss/_7BTw583EpU/VU_W7ZibcksJ
+  default['rabbitmq']['status_broken'] = true
+  default['rabbitmq']['pid_file'] = '/var/run/rabbitmq/pid'
+end
 
 # RabbitMQ version to install for "redhat", "centos", "scientific", and "amazon".
 default['rabbitmq']['version'] = '2.8.4'

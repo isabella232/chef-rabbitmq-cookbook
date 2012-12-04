@@ -3,6 +3,9 @@
 %%%
 
 [
+<% if node['rabbitmq']['port_range'] -%>
+  {kernel, [{inet_dist_listen_min, <%= node['rabbitmq']['port_range'].first %>},{inet_dist_listen_max, <%= node['rabbitmq']['port_range'].last %>}]},
+<% end %>
   {rabbit, [
 <% if node['rabbitmq']['cluster'] && node['rabbitmq']['cluster_disk_nodes'] -%>
     {cluster_nodes, [<%= node['rabbitmq']['cluster_disk_nodes'].map{|n| "\'#{n}\'"}.join(',') %>]},

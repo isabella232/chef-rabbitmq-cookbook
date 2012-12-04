@@ -30,6 +30,10 @@ default['rabbitmq']['cluster'] = false
 default['rabbitmq']['cluster_disk_nodes'] = []
 default['rabbitmq']['erlang_cookie'] = 'AnyAlphaNumericStringWillDo'
 
+#port configuration
+# Set to a Range object, e.g. 9100..9105
+default['rabbitmq']['port_range'] = nil
+
 #ssl
 default['rabbitmq']['ssl'] = false
 default['rabbitmq']['ssl_port'] = '5671'

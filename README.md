@@ -8,7 +8,9 @@ default
 -------
 Installs `rabbitmq-server` from RabbitMQ.com's APT repository, your distro's version, or the DEB or RPM directly (there is no yum repo). Depending on your distribution, the provided version may be quite old so they are disabled by default. If you want to use the distro version, set the attribute `['rabbitmq']['use_distro_version']` to `true`.
 
-Cluster recipe is now combined with default. Recipe will now auto-cluster. Set the :cluster attribute to true, :cluster_disk_nodes array of `node@host` strings that describe which you want to be disk nodes and then set an alphanumeric string for the :erlang_cookie.
+Cluster recipe is now combined with default. Recipe will now auto-cluster. Set the :cluster attribute to `true`, `:cluster_disk_nodes` array of `node@host` strings that describe which you want to be disk nodes and then set an alphanumeric string for the :erlang_cookie.
+
+To configure the ports that RabbitMQ use when communicating with other cluster nodes, set the `:port_range` attribute to a Range object, e.g. `9100..9105`. This is useful if all your nodes are firewalled.
 
 To enable SSL turn :ssl to true and set the paths to your cacert, cert and key files.
 

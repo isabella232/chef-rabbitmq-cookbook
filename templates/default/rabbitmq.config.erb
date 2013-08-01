@@ -7,8 +7,11 @@
   {kernel, [{inet_dist_listen_min, <%= node['rabbitmq']['port_range'].first %>},{inet_dist_listen_max, <%= node['rabbitmq']['port_range'].last %>}]},
 <% end %>
   {rabbit, [
-<% if node['rabbitmq']['cluster'] && node['rabbitmq']['cluster_disk_nodes'] -%>
-    {cluster_nodes, [<%= node['rabbitmq']['cluster_disk_nodes'].map{|n| "\'#{n}\'"}.join(',') %>]},
+<% if node['rabbitmq']['cluster'] -%>
+    <% if node['rabbitmq']['cluster_disk_nodes'] -%>
+        {cluster_nodes, [{<%= node['rabbitmq']['cluster_disk_nodes'].map{|n| "\'#{n}\'"}.join(',') %>,disc}]},
+    <% end %>
+    {cluster_partition_handling,<%= node['rabbitmq']['cluster_partition_handling'] %>},
 <% end %>
 <% if node['rabbitmq']['ssl'] -%>
     {ssl_listeners, [<%= node['rabbitmq']['ssl_port'] %>]},
